@@ -349,6 +349,40 @@ Routing Policies
      29000            ip4.src == $subnet1.kube.ovn.worker_ip4  reroute  100.64.0.4
 ```
 
+### Configuring Bandwidth Limit
+
+You can configure bandwidth limit for the Egress Gateway by modifying the resource as shown in the example below:
+
+```yaml
+apiVersion: kubeovn.io/v1
+kind: VpcEgressGateway
+metadata:
+  name: gateway1
+  namespace: default
+spec:
+  replicas: 1
+  externalSubnet: macvlan1
+  bandwidth:
+    ingress: 100 # [!code callout]
+    egress: 500 # [!code callout]
+  policies:
+    - snat: true
+      subnets:
+        - subnet1
+```
+
+<Callouts>
+1. Ingress bandwidth limit for traffic originating from the external network, in Mbps.
+2. Egress bandwidth limit for traffic destined to the external network, in Mbps.
+</Callouts>
+
+The bandwidth limit is applied to each Egress Gateway instance, and the total bandwidth of the Egress Gateway is the sum of the bandwidth limits of all instances.
+For example, if there are two instances and the egress bandwidth limit is set to 100Mbps, the total egress bandwidth will be 200Mbps.
+
+However, since the egress traffic is distributed to multiple Egress Gateway instances through ECMP with source ip address hashing, the bandwidth limit may not be strictly enforced in some scenarios.
+For example, if there are two Egress Gateway instances and the egress bandwidth limit is set to 100Mbps, but all traffic is forwarded to one instance due to source ip address hashing,
+the actually effective egress bandwidth will be 100Mbps.
+
 ### Enabling BFD-based High Availability
 
 BFD-based high availability relies on the VPC BFD LRP function,
